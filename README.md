@@ -79,6 +79,3 @@ https://github.com/user-attachments/assets/fe7bf0a1-55a5-4e1e-938d-0e0892a9b7f1
 - **User Authentication**: Add user authentication for personalized experiences.
 - **Cloud Deployment**: Deploy the application on cloud platforms like AWS or Azure.
 - **Local AI Models**: Integrate models like Ollama LLaVA or QwenCoder to make the application fully local, eliminating the need for external API dependencies.
-
-## Conclusion
-This project is a testament to your skills in AI, ML, and MLOps. It not only highlights your technical expertise but also your ability to build practical, user-centric applications. Perfect for showcasing your capabilities to potential employers in the AI/ML domain.
