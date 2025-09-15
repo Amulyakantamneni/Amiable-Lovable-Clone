@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amiable: Your AI Web Editor</title>
+    <style>
+        /* CSS from the previous response for the chat UI, with a few tweaks */
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f0f4f8;
+            --user-bg-color: #e0f7fa;
+            --bot-bg-color: #f1f8e9;
+            --text-color: #333;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Sidebar for Chat */
+        .sidebar {
+            width: 350px;
+            background-color: #fff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .chat-header {
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .chat-box {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 90%;
+            padding: 12px 18px;
+            border-radius: var(--border-radius);
+            line-height: 1.5;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-message {
+            background-color: var(--user-bg-color);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message {
+            background-color: var(--bot-bg-color);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* New Loader CSS */
+        .loader {
+            display: none; /* Hidden by default */
+            width: 24px;
+            height: 24px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Input Area */
+        .chat-input {
+            display: flex;
+            padding: 20px;
+            background-color: #fff;
+            border-top: 1px solid #eee;
+            gap: 10px;
+            align-items: center; /* Align items vertically */
+        }
+
+        .chat-input input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            outline: none;
+        }
+
+        .chat-input button {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            background-color: #3876c2;
+        }
+
+        /* New Preview Controls CSS */
+        .preview-controls {
+            position: fixed;
+            top: 0;
+            left: 350px; /* Aligned with the end of the sidebar */
+            right: 0;
+            height: 60px;
+            background-color: #fff;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 20px;
+            z-index: 10;
+            gap: 10px;
+        }
+        
+        .preview-controls .refresh-btn {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .preview-controls .refresh-btn:hover {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .preview-controls .loader {
+            margin-left: 10px;
+        }
+
+        /* Main content for rendering HTML */
+        .main-content {
+            flex-grow: 1;
+            margin-left: 350px;
+            height: 100vh;
+            background-color: #fff;
+            border: none;
+            overflow: hidden;
+            margin-top: 60px; /* Space for the new controls bar */
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="chat-header">Amiable: AI Web Editor 🤖</div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Describe your UI..." onkeydown="if(event.keyCode === 13) sendMessage()">
+            <button id="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <div class="preview-controls">
+        <button id="refresh-btn" class="refresh-btn" onclick="refreshPreview()">🔄</button>
+        <div id="loader" class="loader"></div>
+    </div>
+
+    <iframe class="main-content" id="html-renderer" title="Rendered HTML/CSS" src="/static/live_preview.html"></iframe>
+
+    <script>
+        function refreshPreview() {
+            const htmlRenderer = document.getElementById('html-renderer');
+            // Simply reassign the src to force a refresh
+            htmlRenderer.src = htmlRenderer.src;
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const chatBox = document.getElementById('chat-box');
+            const htmlRenderer = document.getElementById('html-renderer');
+            const loader = document.getElementById('loader');
+            const message = userInput.value.trim();
+
+            if (!message) return;
+
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = 'message user-message';
+            userMsgDiv.textContent = message;
+            chatBox.appendChild(userMsgDiv);
+            
+            userInput.value = '';
+            userInput.disabled = true;
+
+            // Show the loader and "thinking" message
+            loader.style.display = 'block';
+            const botMsgDiv = document.createElement('div');
+            botMsgDiv.className = 'message bot-message';
+            botMsgDiv.textContent = 'Amiable is thinking...';
+            chatBox.appendChild(botMsgDiv);
+            
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/edit_file', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    botMsgDiv.textContent = 'Error: ' + data.error;
+                    console.error('API Error:', data.error);
+                } else {
+                    botMsgDiv.textContent = data.message;
+                    
+                    // Reload the iframe to show the updated file content
+                    htmlRenderer.src = htmlRenderer.src;
+                }
+
+            } catch (error) {
+                console.error('Error fetching stream:', error);
+                botMsgDiv.textContent = 'Error: Could not get a response. Please try again.';
+            } finally {
+                userInput.disabled = false;
+                userInput.focus();
+                loader.style.display = 'none'; // Hide the loader
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
